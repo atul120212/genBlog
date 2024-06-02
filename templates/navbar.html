@@ -1,0 +1,43 @@
+<nav class="p-4 text-white flex justify-between">
+    <div class="flex justify-center items-center">
+      <a href="/">
+        <img src="/media/images/logo.png" class=" h-[30px] ">
+      </a>
+    </div>
+    <div class="flex justify-center items-center text-black">
+      <a href="{% url 'explore' %}" class="cta mr-4 {% if request.path == '/explore' %}active{% endif %}">
+        <span class="hover-underline-animation"> Explore </span>
+      </a>
+      <a href="{% url 'generate' %}" class="cta mr-4 {% if request.path == '/generate' %}active{% endif %}">
+        <span class="hover-underline-animation"> Generate </span>
+      </a>
+      <a href="{% url 'about' %}" class="cta mr-4 {% if request.path == '/about' %}active{% endif %}">
+        <span class="hover-underline-animation"> About </span>
+      </a>
+      <a href="{% url 'contact' %}" class="cta {% if request.path == '/contact' %}active{% endif %}">
+        <span class="hover-underline-animation"> Contact Us </span>
+      </a>
+    </div>
+    <div class="flex justify-between items-center">
+      {% if user.is_authenticated %}
+        <a href="{% url 'profile' %}" class="cta mr-4 {% if request.path == '/profile' %}active{% endif %}">
+          <span class="hover-underline-animation"> Profile </span>
+        </a>
+        <a href="{% url 'user_blogs' %}" class="cta mr-4 {% if request.path == '/blogs' %}active{% endif %}">
+          <span class="hover-underline-animation"> My Blogs </span>
+        </a>
+        <a href="{% url 'logout' %}" class="cta {% if request.path == '/logout' %}active{% endif %}">
+          <span class="hover-underline-animation"> Logout </span>
+        </a>
+      {% else %}
+        <div class="text-black">
+          <a href="{% url 'login' %}" class="cta mr-4">
+            <span class="hover-underline-animation"> Login </span>
+          </a>
+          <a href="{% url 'register' %}" class="cta">
+            <span class="hover-underline-animation"> Get Started </span>
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </nav>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenBlog | AI Blog Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="/media/css/styles.css">
+    <style>
+        .custom-clip-path {
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-scrren bg-gray-100 font-sans antialised">
+    <!-- Navbar -->
+    {% include 'navbar.html' %}
+    <!-- Main -->
+    <div class="flex-grow container mt-5 mx-auto px-4 sm:px-0">          
+        <div class="flex justify-center align-center">
+            <div class="form-container">
+                <form class="form" method="POST">
+                    {% csrf_token %}
+                    <span class="block text-black text-2xl font-extrabold mb-5">Get in touch</span>
+                    <input placeholder="Name" name="name" type="text" class="input">
+                    <input placeholder="Email" name="email" id="mail" type="email" class="input">
+                    <textarea placeholder="Say Hello" rows="10" cols="30" id="message" name="message" class="textarea"></textarea>
+                    {% if messages %}
+                        <div class="mb-4">
+                            {% for message in messages %}
+                                <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4" role="alert">
+                                    <p>{{ message }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="button-container">
+                        <button class="send-button" type="submit">Send</button>
+                        <div class="reset-button-container">
+                            <div id="reset-btn" class="reset-button">Reset</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <footer class="text-center p-4 text-black">
+        Created by <span class="text-lg pb-5 font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-500 via-blue-500 to-red-600">Tech Paradise</span>
+    </footer>
+
+</body>
+</html>

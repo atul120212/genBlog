@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenBlog | AI Blog Generator</title>
+    <script src="/media/js/tailwind.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="/media/css/styles.css">
+    
+</head>
+<body class="flex flex-col min-h-scrren bg-gray-100 font-sans antialised">
+    <!-- Navbar -->
+    {% include 'navbar.html' %}
+    {% if profile %}
+      <div class="flex-grow container mt-5 mx-auto px-4">
+        <div class="h-full w-full flex justify-center items-center flex-col">
+          <img class="w-[150px] h-[150px] rounded-full border-[1px] border-slate-400" src="{{ profile.profile_img.url }}" alt="">
+          <div class="text-lg font-bold">{{profile.name}}</div>
+        </div>
+      </div>
+    {% else %}
+    <div class="flex-grow container mt-5 mx-auto px-4">
+        <form action="{% url 'profile' %}" class="flex gap-4" id="profile-form" method="post" enctype="multipart/form-data">
+          <div>
+            {% csrf_token %}
+            {% if user.profile_img %}
+              <img src="{{ user.profile_img.url }}" class="h-[250px] w-[250px] img-thumbnail" alt="Profile Image" id="profile-img-preview">
+              <div id="profile-img-upload" class="hidden">
+                <label for="file" class="file-upload-label">
+                  <div class="file-upload-design">
+                    <svg viewBox="0 0 640 512" height="1em">
+                      <path
+                        d="M144 480C64.5 480 0 415.5 0 336c0-62.8 40.2-116.2 96.2-135.9c-.1-2.7-.2-5.4-.2-8.1c0-88.4 71.6-160 160-160c59.3 0 111 32.2 138.7 80.2C409.9 102 428.3 96 448 96c53 0 96 43 96 96c0 12.2-2.3 23.8-6.4 34.6C596 238.4 640 290.1 640 352c0 70.7-57.3 128-128 128H144zm79-217c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l39-39V392c0 13.3 10.7 24 24 24s24-10.7 24-24V257.9l39 39c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0l-80 80z"
+                      ></path>
+                    </svg>
+                    <p>Drag and Drop</p>
+                    <p>or</p>
+                    <span class="browse-button">Browse file</span>
+                  </div>
+                  <input id="file" type="file" accept="image/*" name="profile_img" />
+                </label>
+              </div>
+                {% else %}
+                <img src="" class="h-[250px] w-[250px] img-thumbnail" alt="Image not found" id="profile-img-preview">
+                <div id="profile-img-upload" class="hidden">
+                  <label for="file" class="file-upload-label">
+                    <div class="file-upload-design">
+                      <svg viewBox="0 0 640 512" height="1em">
+                        <path
+                          d="M144 480C64.5 480 0 415.5 0 336c0-62.8 40.2-116.2 96.2-135.9c-.1-2.7-.2-5.4-.2-8.1c0-88.4 71.6-160 160-160c59.3 0 111 32.2 138.7 80.2C409.9 102 428.3 96 448 96c53 0 96 43 96 96c0 12.2-2.3 23.8-6.4 34.6C596 238.4 640 290.1 640 352c0 70.7-57.3 128-128 128H144zm79-217c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l39-39V392c0 13.3 10.7 24 24 24s24-10.7 24-24V257.9l39 39c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0l-80 80z"
+                        ></path>
+                      </svg>
+                      <p>Drag and Drop</p>
+                      <p>or</p>
+                      <span class="browse-button">Browse file</span>
+                    </div>
+                    <input id="file" type="file" accept="image/*" name="profile_img" />
+                  </label>
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                <div class="mb-2">
+                    <label for="name" class="block text-sm font-medium leading-6 text-gray-900">Full Name</label>
+                    <div class="relative mt-1 rounded-md shadow-sm">
+                      <input type="text" value="{{user.name}}" disabled name="name" id="name" class="block w-full rounded-md border-0 py-1.5 pl-2 pr-20 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="0.00">
+                    </div>
+                  </div>
+                  <div class="mb-2">
+                    <label for="name" class="block text-sm font-medium leading-6 text-gray-900">Email</label>
+                    <div class="relative mt-1 rounded-md shadow-sm">
+                      <input type="text" value="{{user.email}}" disabled name="email" id="email" class="block w-full rounded-md border-0 py-1.5 pl-2 pr-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:border-blue-500 focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="abc@gmail.com">
+                    </div>
+                  </div>
+                  <div>
+                    <label for="name" class="block text-sm font-medium leading-6 text-gray-900">Likes</label>
+                    <div class="flex h-[2rem] flex justify-start items-center">
+                        <p class="mr-2">100</p>
+                        <div class="heart-container h-[20px] w-[20px]" title="Like">
+                            <input type="checkbox" class="checkbox" id="like" checked disabled>
+                            <div class="svg-container">
+                              <svg viewBox="0 0 24 24" class="svg-outline" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17.5,1.917a6.4,6.4,0,0,0-5.5,3.3,6.4,6.4,0,0,0-5.5-3.3A6.8,6.8,0,0,0,0,8.967c0,4.547,4.786,9.513,8.8,12.88a4.974,4.974,0,0,0,6.4,0C19.214,18.48,24,13.514,24,8.967A6.8,6.8,0,0,0,17.5,1.917Zm-3.585,18.4a2.973,2.973,0,0,1-3.83,0C4.947,16.006,2,11.87,2,8.967a4.8,4.8,0,0,1,4.5-5.05A4.8,4.8,0,0,1,11,8.967a1,1,0,0,0,2,0,4.8,4.8,0,0,1,4.5-5.05A4.8,4.8,0,0,1,22,8.967C22,11.87,19.053,16.006,13.915,20.313Z"></path>
+                              </svg>
+                              <svg viewBox="0 0 24 24" class="svg-filled" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17.5,1.917a6.4,6.4,0,0,0-5.5,3.3,6.4,6.4,0,0,0-5.5-3.3A6.8,6.8,0,0,0,0,8.967c0,4.547,4.786,9.513,8.8,12.88a4.974,4.974,0,0,0,6.4,0C19.214,18.48,24,13.514,24,8.967A6.8,6.8,0,0,0,17.5,1.917Z"></path>
+                              </svg>
+                              <svg class="svg-celebrate" width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+                                <polygon points="10,10 20,20"></polygon>
+                                <polygon points="10,50 20,50"></polygon>
+                                <polygon points="20,80 30,70"></polygon>
+                                <polygon points="90,10 80,20"></polygon>
+                                <polygon points="90,50 80,50"></polygon>
+                                <polygon points="80,80 70,70"></polygon>
+                              </svg>
+                            </div>
+                          </div>
+                    </div>
+                  </div>
+                  <button type="button" class="edit_btn rounded-lg bg-blue-500 px-4 text-white py-1">Edit</button>
+                  <button type="submit" class="hidden submit_btn rounded-lg bg-blue-500 px-4 text-white py-1">Save</button>
+                  <button type="button" class="hidden cancel_btn rounded-lg bg-gray-400 px-4 text-white py-1">Cancel</button>
+            </div>
+        </form>
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    {% endif %}
+    <footer class="text-center p-4 text-blacl mt-2">
+        Created by <span class="text-lg pb-5 font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-500 via-blue-500 to-red-600">Tech Paradise</span>
+    </footer>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        $(document).ready(function(){
+          const originalImageUrl = $('#profile-img-preview').attr('src');
+          const $fileInput = $('#file');
+          const $profileImgPreview = $('#profile-img-preview');
+          const $profileImgUploadDiv = $('#profile-img-upload');
+          const $editBtn = $('.edit_btn');
+          const $submitBtn = $('.submit_btn');
+          const $cancelBtn = $('.cancel_btn');
+          const $nameInput = $('#name');
+          const $emailInput = $('#email');
+          const $likesInput = $('#likes');
+          $('.edit_btn').on('click',function(){
+            $("#name").attr({ disabled: false, readonly: false });
+            $('#profile-img-upload').removeClass('hidden').addClass('flex');
+            $('.img-thumbnail').addClass('hidden');
+            $('.cancel_btn, .submit_btn').removeClass('hidden');
+            $('.edit_btn').addClass('hidden');
+          });
+          $('.cancel_btn').on('click',function(){
+            $("#email, #name").attr({ disabled: true, readonly: true });
+            $('.img-thumbnail').removeClass('hidden');
+            $('#profile-img-upload').addClass('hidden');
+            $('.cancel_btn, .submit_btn').addClass('hidden');
+            $('.edit_btn').removeClass('hidden');
+            $('#profile-img-preview').attr('src', originalImageUrl).removeClass('hidden');
+            $('#profile-img-upload').addClass('hidden');
+            $('#file').val('');
+          });
+          $fileInput.on('change', function() {
+            if ($fileInput[0].files && $fileInput[0].files[0]) {
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                $profileImgPreview.attr('src', e.target.result).removeClass('hidden');
+                $profileImgUploadDiv.addClass('hidden');
+              };
+              reader.readAsDataURL($fileInput[0].files[0]);
+            }
+          });
+        });
+    </script>
+</body>
+</html>

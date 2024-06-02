@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Blog Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/media/css/styles.css">
+    <style>
+        .toggleContainer {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            width: fit-content;
+            border: 3px solid #343434;
+            border-radius: 20px;
+            background: #343434;
+            font-weight: bold;
+            color: #343434;
+            cursor: pointer;
+        }
+        .toggleContainer::before {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            left: 0%;
+            border-radius:20px;
+            background: white;
+            transition: all 0.3s;
+        }
+        .toggleCheckbox:checked + .toggleContainer::before {
+            left: 50%;
+        }
+        .toggleContainer div {
+            padding: 6px;
+            text-align: center;
+            z-index: 1;
+        }
+        .toggleCheckbox {
+            display: none;
+        }
+        .toggleCheckbox:checked + .toggleContainer div:first-child{
+            color: white;
+            transition: color 0.3s;
+        }
+        .toggleCheckbox:checked + .toggleContainer div:last-child{
+            color: #343434;
+            transition: color 0.3s;
+        }
+        .toggleCheckbox + .toggleContainer div:first-child{
+            color: #343434;
+            transition: color 0.3s;
+        }
+        .toggleCheckbox + .yt_div{
+            display: none;
+        }
+        .toggleCheckbox:checked + .topic_div{
+            display: none;
+        }
+        .toggleCheckbox + .toggleContainer div:last-child{
+            color: white;
+            transition: color 0.3s;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-scrren bg-gray-100 font-sans antialised">
+    <!-- Navbar -->
+    {% include 'navbar.html' %}
+
+    <!-- Main -->
+    <div class="flex-grow container mx-auto mt-10 px-4 sm:px-0">
+        <div class="flex items-center justify-center w-full h-16 mb-5">
+            <input type="checkbox" id="toggle" class="toggleCheckbox" />
+            <label for="toggle" class='toggleContainer' style="width: 50%;">
+                <div>Text</div>   
+                <div>YouTube</div>
+            </label>
+        </div>
+        <div class="max-w-3xl mx-auto flex flex-col">
+            <div class="topic_div">
+                <div class="flex space-x-4 mb-0 justify-center items-center">
+                    <input id="topic" type="text" placeholder="Topic: Integrating AI" class="flex-grow p-2 
+                    border border-blue-400 rounded-lg min-h-[3rem] 
+                    focus:border-blue-600 focus:outline-none active:border-indigo-500">
+                    <div id="generateTopicBlogButton" class="h-16 flex items-center justify-center cursor-pointer">
+                        <div class="relative inline-flex items-center justify-start py-3 pl-4 pr-12 overflow-hidden font-semibold shadow text-indigo-600 transition-all duration-150 ease-in-out rounded hover:pl-10 hover:pr-6 bg-gray-50 dark:bg-gray-700 dark:text-white dark:hover:text-gray-200 dark:shadow-none group" >
+                            <span class="absolute bottom-0 left-0 w-full h-1 transition-all duration-150 ease-in-out bg-indigo-600 group-hover:h-full"></span>
+                                <span class="absolute right-0 pr-4 duration-200 ease-out group-hover:translate-x-12" >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="w-5 h-5 text-green-400" >
+                                    <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+                                </svg>
+                                </span>
+                                <span class="absolute left-0 pl-2.5 -translate-x-12 group-hover:translate-x-0 ease-out duration-200" >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="w-5 h-5 text-green-400" >
+                                    <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+                                </svg>
+                                </span>
+                                <span class="relative w-full text-left transition-colors duration-200 ease-in-out group-hover:text-white dark:group-hover:text-gray-200">Generate</span>
+                            </div>
+                    </div>
+                </div>
+                <div class="topic_error text-red-500 text-sm hidden">Please enter a topic in the field.</div>
+            </div>
+            <div class="yt_div">
+                <div class="flex space-x-4 justify-center items-center">
+                    <input id="yt_link" type="url" placeholder="https://www.youtube.com/watch?v=CqLGomPqiT8" class="flex-grow p-2 
+                    border border-blue-400 rounded-lg min-h-[3rem] 
+                    focus:border-blue-600 focus:outline-none active:border-indigo-500">
+                    <div id="generateYtBlogButton" class="h-16 flex items-center justify-center cursor-pointer">
+                        <div class="relative inline-flex items-center justify-start py-3 pl-4 pr-12 overflow-hidden font-semibold shadow text-indigo-600 transition-all duration-150 ease-in-out rounded hover:pl-10 hover:pr-6 bg-gray-50 dark:bg-gray-700 dark:text-white dark:hover:text-gray-200 dark:shadow-none group" >
+                            <span class="absolute bottom-0 left-0 w-full h-1 transition-all duration-150 ease-in-out bg-indigo-600 group-hover:h-full"></span>
+                                <span class="absolute right-0 pr-4 duration-200 ease-out group-hover:translate-x-12" >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="w-5 h-5 text-green-400" >
+                                    <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+                                </svg>
+                                </span>
+                                <span class="absolute left-0 pl-2.5 -translate-x-12 group-hover:translate-x-0 ease-out duration-200" >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="w-5 h-5 text-green-400" >
+                                    <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+                                </svg>
+                                </span>
+                                <span class="relative w-full text-left transition-colors duration-200 ease-in-out group-hover:text-white dark:group-hover:text-gray-200">Generate</span>
+                            </div>
+                    </div>
+                </div>
+                <div class="yt_error text-red-500 text-sm hidden">Please enter link in the field.</div>
+            </div>
+            <div class="typewriter load" style="display: none;" id="loading-circle">
+                <div class="slide"><i></i></div>
+                <div class="paper"></div>
+                <div class="keyboard"></div>
+            </div>
+            <section class="mt-10 flex-grow generated_blog_block mb-5" style="display: none;">
+                <h2 class="text-xl mb-4 font-semibold">Generated Blog Article</h2>
+                <div id="blogContent" class="mt-2 text-gray-700 space-y-4 p-2 border-2 border-gray-300 rounded-lg">   
+                </div>
+                <form class="my-2 flex justify-between">
+                    <input type="hidden" name="blogID" id="blogID">
+                    <div class="w-1/3">
+                        <button type="button" class="blog_cancel_btn bg-gray-300 p-2 px-5 rounded-xl">Cancel</button>
+                    </div>
+                    <div class="w-2/3 text-right">
+                        <select id="visibility" name="visibility" class="h-full rounded-md border-0 bg-gray-200 py-2 px-2 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm mr-2">
+                            <option value="1">Public</option>
+                            <option value="0">Private</option>
+                        </select>
+                        <button type="submit" class="blog_submit_btn bg-gradient-to-r from-pink-500 to-red-600 text-white p-2 px-5 rounded-xl">Save</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/showdown"></script>
+    <script>
+        $(document).ready(function() {
+            $('.yt_div').hide();
+            $('.toggleCheckbox').change(function() {
+                if ($(this).is(':checked')) {
+                    $('.topic_div').hide();
+                    $('.yt_div').show();
+                } else {
+                    $('.topic_div').show();
+                    $('.yt_div').hide();
+                }
+            });
+        });
+
+        $("#topic").keyup(function() {
+            $("#topic").removeClass("border-red-500");
+            $("#topic").addClass("border-blue-400");
+            $(".topic_error").addClass('hidden');
+        });
+
+        $("#yt_link").keyup(function() {
+            $("#yt_link").removeClass("border-red-500");
+            $("#yt_link").addClass("border-blue-400");
+            $(".yt_error").addClass('hidden');
+        });
+
+        $('#generateTopicBlogButton').on('click', async () => {
+            $('.generated_blog_block').css('display','none');
+            const topic = $('#topic').val();
+            const blogContent = $('#blogContent');
+            if (topic) {
+                $('#loading-circle').css('display', 'block');
+                blogContent.html('');
+                const endpointUrl = '/topic_view';
+                const csrfToken = '{{ csrf_token }}'
+                try {
+                    const response = await fetch(endpointUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ topic: topic })
+                    });
+                    const data = await response.json();
+                    blogContent.html('');
+                    markdownText = data.content;
+                    const converter = new showdown.Converter();
+                    const htmlContent = converter.makeHtml(markdownText);
+                    blogContent.html(htmlContent);
+                    $('.generated_blog_block').css('display', 'block');
+                    $('#blogID').val(data.blogpost_id)
+                } catch (error) {
+                    console.error("Error occurred:", error);
+                }
+                $('#loading-circle').css('display', 'none');
+            } else {
+                $('.topic_error').removeClass('hidden')
+                $("#topic").addClass("border-red-500");
+                $("#error_message").text("Please enter a topic in the field.");
+            }
+        });
+
+        $('#generateYtBlogButton').on('click', async () => {
+            $('.generated_blog_block').css('display','none');
+            const yt_link = $('#yt_link').val();
+            const blogContent = $('#blogContent');
+            if (yt_link) {
+                $('#loading-circle').css('display', 'block');
+                blogContent.html('');
+                const endpointUrl = '/yt_view';
+                const csrfToken = '{{ csrf_token }}'
+                try {
+                    const response = await fetch(endpointUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        },
+                        body: JSON.stringify({ yt_link: yt_link })
+                    });
+                    const data = await response.json();
+                    console.log(data)
+                    blogContent.html('');
+                    markdownText = data.content;
+                    const converter = new showdown.Converter();
+                    const htmlContent = converter.makeHtml(markdownText);
+                    blogContent.html(htmlContent);
+                    $('.generated_blog_block').css('display', 'block');
+                    $('#blogID').val(data.blogpost_id);
+                } catch (error) {
+                    console.error("Error occurred:", error);
+                }
+                $('#loading-circle').css('display', 'none');
+            } else {
+                $('.yt_error').removeClass('hidden')
+                $("#yt_link").addClass("border-red-500");
+                $("#error_message").text("Please enter a topic in the field.");
+            }
+        });
+
+        $('.blog_submit_btn').on('click', async (e) => {
+            e.preventDefault();
+            let blogID = $('#blogID').val();
+            let action = 'submit';
+            let visibility = $('#visibility').val();
+            const endpointUrl = '/blog_submit';
+            const csrfToken = '{{ csrf_token }}'
+            const response = await fetch(endpointUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ blogID:blogID, action:action, visibility: visibility })
+            });
+            const data = await response.json();
+            if (data.content == 'success'){
+                window.location.href = '/blogs'
+            }else{
+                alert(data.error)
+            }
+        });
+
+        $('.blog_cancel_btn').on('click', async (e) => {
+            e.preventDefault();
+            let blogID = $('#blogID').val();
+            let action = 'cancel';
+            let visibility = $('#visibility').val();
+            const endpointUrl = '/blog_submit';
+            const csrfToken = '{{ csrf_token }}'
+            const response = await fetch(endpointUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ blogID:blogID, action:action, visibility: visibility })
+            });
+            const data = await response.json();
+            if (data.content == 'success'){
+                window.location.href = '/generate'
+            }else{
+                alert(data.error)
+            }
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Blog Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="/media/css/styles.css">
+</head>
+<body class="flex flex-col min-h-scrren bg-gray-100 font-sans antialised">
+    <!-- Navbar -->
+    {% include 'navbar.html' %}
+    <div class="flex-grow container mt-5 mx-auto px-4">
+      <div class="flex flex-col mb-5">
+        <h1 class="text-2xl">My Blogs</h1>
+      </div>
+      <div class="grid grid-cols-4 gap-4">
+        {% for blog in blogs %}
+            <div class="max-w-sm rounded overflow-hidden shadow-lg">
+                <div class="h-auto w-auto overflow-hidden">
+                  {% if blog.thumbnail %}
+                  <img src="{{ blog.thumbnail.url }}" alt="Thumbnail for {{ blog.title }}">
+                  {% else %}
+                    <img class="object-cover h-full w-full" src="/media/images/blog.jpg" alt="Card image cap">
+                  {% endif %}
+                </div>
+                <div class="px-6 py-4">
+                  <a href="{% url 'blog_detail' blog.slug %}" class="text-lg font-semibold mb-2 hover:text-blue-500">{{ blog.title }}</a>
+                  <p class="text-gray-400 text-sm">Published on {{ blog.created_at }}</p>
+                </div>
+            </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <footer class="text-center p-4 text-blacl mt-2">
+        Created by <span class="text-lg pb-5 font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-pink-500 via-blue-500 to-red-600">Tech Paradise</span>
+    </footer>
+
+</body>
+</html>
