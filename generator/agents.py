@@ -97,62 +97,37 @@ def groq_generate(prompt: str, max_tokens: int = 1200, max_retries: int = 2) -> 
 
 
 # ---------------------------------------------------------------------------
-# Image generation — powered by Bytez (FLUX.1-schnell)
-# Free tier available at https://bytez.com/api
+# Image generation — powered by Pollinations.ai
+# Free, no API key required, high quality FLUX model.
 # ---------------------------------------------------------------------------
 
 def generate_blog_image(title: str, keywords: str) -> bytes | None:
     """
-    Generates a blog thumbnail using Bytez + FLUX.1-schnell.
-    Returns raw PNG bytes on success, None on any failure (non-fatal).
+    Generates a blog thumbnail using Pollinations.ai (free, no API key).
+    Returns raw JPEG/PNG bytes on success, None on any failure (non-fatal).
     """
-    import base64
-    from bytez import Bytez
-
-    api_key = os.environ.get("BYTEZ_API_KEY", "").strip()
-    if not api_key:
-        print("[Image] BYTEZ_API_KEY not set — skipping thumbnail generation.")
-        return None
+    import urllib.request
+    import urllib.parse
 
     try:
         prompt = (
             f"A professional blog header image for an article titled: '{title}'. "
             f"Themes: {keywords}. "
             "Modern digital illustration, vibrant colors, clean design. "
-            "No text, no letters, no watermarks. 16:9 aspect ratio."
+            "No text, no letters, no watermarks."
         )
+        
+        encoded_prompt = urllib.parse.quote(prompt)
+        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=576&nologo=true"
 
-        client = Bytez(api_key)
-        model = client.model("black-forest-labs/FLUX.1-schnell")
-
-        result = model.run(
-            prompt,
-            {"num_inference_steps": 4, "width": 1024, "height": 576}
-        )
-
-        if result.error:
-            print(f"[Image] Bytez error: {result.error}")
-            return None
-
-        # output is a base64 string (or list of base64 strings)
-        output = result.output
-        if isinstance(output, list):
-            output = output[0]
-
-        if not output:
-            print("[Image] Bytez returned empty output.")
-            return None
-
-        # Strip data URI prefix if present (e.g. "data:image/png;base64,...")
-        if isinstance(output, str) and "," in output:
-            output = output.split(",", 1)[1]
-
-        image_bytes = base64.b64decode(output)
-        print(f"[Image] Thumbnail generated via Bytez FLUX ({len(image_bytes)} bytes)")
-        return image_bytes
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response:
+            image_bytes = response.read()
+            print(f"[Image] Thumbnail generated via Pollinations.ai ({len(image_bytes)} bytes)")
+            return image_bytes
 
     except Exception as e:
-        print(f"[Image] Bytez image generation failed: {e}")
+        print(f"[Image] Image generation failed: {e}")
         return None
 
 

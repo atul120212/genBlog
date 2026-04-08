@@ -401,7 +401,8 @@ def generate_agent(request):
                 status=429, content_type="application/json"
             )
         except Exception as e:
-            print(e)
+            import traceback
+            traceback.print_exc()
             return HttpResponse(json.dumps({'error': str(e)}), status=500, content_type="application/json")
     else:
         return HttpResponse(json.dumps({'error': 'Method not allowed'}), status=405, content_type="application/json")
