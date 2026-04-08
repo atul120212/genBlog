@@ -3,7 +3,6 @@ import re
 import json
 import time
 import tempfile
-import google.generativeai as genai
 from groq import Groq
 from duckduckgo_search import DDGS
 from .rag_service import query_rag
@@ -98,53 +97,64 @@ def groq_generate(prompt: str, max_tokens: int = 1200, max_retries: int = 2) -> 
 
 
 # ---------------------------------------------------------------------------
-# Gemini — used ONLY for optional thumbnail image generation
+# Image generation — powered by Bytez (FLUX.1-schnell)
+# Free tier available at https://bytez.com/api
 # ---------------------------------------------------------------------------
-
-def _configure_gemini():
-    genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
-
 
 def generate_blog_image(title: str, keywords: str) -> bytes | None:
     """
-    Generates a blog thumbnail using Google's Imagen model.
+    Generates a blog thumbnail using Bytez + FLUX.1-schnell.
     Returns raw PNG bytes on success, None on any failure (non-fatal).
-    Gemini is only used here — not for text generation.
     """
+    import base64
+    from bytez import Bytez
+
+    api_key = os.environ.get("BYTEZ_API_KEY", "").strip()
+    if not api_key:
+        print("[Image] BYTEZ_API_KEY not set — skipping thumbnail generation.")
+        return None
+
     try:
-        _configure_gemini()
         prompt = (
             f"A professional blog header image for an article titled: '{title}'. "
             f"Themes: {keywords}. "
-            "Modern digital illustration, clean design, vibrant colors. "
-            "No text, no letters, no watermarks."
+            "Modern digital illustration, vibrant colors, clean design. "
+            "No text, no letters, no watermarks. 16:9 aspect ratio."
         )
 
-        # Try Imagen 3
-        try:
-            imagen = genai.ImageGenerationModel("imagen-3.0-generate-008")
-            result = imagen.generate_images(prompt=prompt, number_of_images=1, aspect_ratio="16:9")
-            if result.images:
-                print("[Image] Generated via Imagen 3")
-                return result.images[0]._image_bytes
-        except Exception as img_err:
-            print(f"[Image] Imagen 3 failed ({img_err}), trying flash-exp...")
+        client = Bytez(api_key)
+        model = client.model("black-forest-labs/FLUX.1-schnell")
 
-        # Fallback: gemini-2.0-flash-exp
-        model = genai.GenerativeModel(
-            "gemini-2.0-flash-exp",
-            generation_config={"response_modalities": ["image", "text"]},
+        result = model.run(
+            prompt,
+            {"num_inference_steps": 4, "width": 1024, "height": 576}
         )
-        response = model.generate_content(prompt)
-        for part in response.candidates[0].content.parts:
-            if part.inline_data and part.inline_data.mime_type.startswith("image/"):
-                print("[Image] Generated via gemini-2.0-flash-exp")
-                return part.inline_data.data
+
+        if result.error:
+            print(f"[Image] Bytez error: {result.error}")
+            return None
+
+        # output is a base64 string (or list of base64 strings)
+        output = result.output
+        if isinstance(output, list):
+            output = output[0]
+
+        if not output:
+            print("[Image] Bytez returned empty output.")
+            return None
+
+        # Strip data URI prefix if present (e.g. "data:image/png;base64,...")
+        if isinstance(output, str) and "," in output:
+            output = output.split(",", 1)[1]
+
+        image_bytes = base64.b64decode(output)
+        print(f"[Image] Thumbnail generated via Bytez FLUX ({len(image_bytes)} bytes)")
+        return image_bytes
 
     except Exception as e:
-        print(f"[Image] Thumbnail generation skipped: {e}")
+        print(f"[Image] Bytez image generation failed: {e}")
+        return None
 
-    return None
 
 
 # ---------------------------------------------------------------------------
