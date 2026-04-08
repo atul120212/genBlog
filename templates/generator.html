@@ -1,306 +1,304 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Blog Generator</title>
+    <title>Enterprise AI Blog Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/media/css/styles.css">
-    <style>
-        .toggleContainer {
-            position: relative;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            width: fit-content;
-            border: 3px solid #343434;
-            border-radius: 20px;
-            background: #343434;
-            font-weight: bold;
-            color: #343434;
-            cursor: pointer;
-        }
-        .toggleContainer::before {
-            content: '';
-            position: absolute;
-            width: 50%;
-            height: 100%;
-            left: 0%;
-            border-radius:20px;
-            background: white;
-            transition: all 0.3s;
-        }
-        .toggleCheckbox:checked + .toggleContainer::before {
-            left: 50%;
-        }
-        .toggleContainer div {
-            padding: 6px;
-            text-align: center;
-            z-index: 1;
-        }
-        .toggleCheckbox {
-            display: none;
-        }
-        .toggleCheckbox:checked + .toggleContainer div:first-child{
-            color: white;
-            transition: color 0.3s;
-        }
-        .toggleCheckbox:checked + .toggleContainer div:last-child{
-            color: #343434;
-            transition: color 0.3s;
-        }
-        .toggleCheckbox + .toggleContainer div:first-child{
-            color: #343434;
-            transition: color 0.3s;
-        }
-        .toggleCheckbox + .yt_div{
-            display: none;
-        }
-        .toggleCheckbox:checked + .topic_div{
-            display: none;
-        }
-        .toggleCheckbox + .toggleContainer div:last-child{
-            color: white;
-            transition: color 0.3s;
-        }
-    </style>
 </head>
-<body class="flex flex-col min-h-scrren bg-gray-100 font-sans antialised">
+<body class="flex flex-col min-h-screen bg-gray-50 font-sans antialiased text-gray-800">
     <!-- Navbar -->
     {% include 'navbar.html' %}
 
     <!-- Main -->
-    <div class="flex-grow container mx-auto mt-10 px-4 sm:px-0">
-        <div class="flex items-center justify-center w-full h-16 mb-5">
-            <input type="checkbox" id="toggle" class="toggleCheckbox" />
-            <label for="toggle" class='toggleContainer' style="width: 50%;">
-                <div>Text</div>   
-                <div>YouTube</div>
-            </label>
-        </div>
-        <div class="max-w-3xl mx-auto flex flex-col">
-            <div class="topic_div">
-                <div class="flex space-x-4 mb-0 justify-center items-center">
-                    <input id="topic" type="text" placeholder="Topic: Integrating AI" class="flex-grow p-2 
-                    border border-blue-400 rounded-lg min-h-[3rem] 
-                    focus:border-blue-600 focus:outline-none active:border-indigo-500">
-                    <div id="generateTopicBlogButton" class="h-16 flex items-center justify-center cursor-pointer">
-                        <div class="relative inline-flex items-center justify-start py-3 pl-4 pr-12 overflow-hidden font-semibold shadow text-indigo-600 transition-all duration-150 ease-in-out rounded hover:pl-10 hover:pr-6 bg-gray-50 dark:bg-gray-700 dark:text-white dark:hover:text-gray-200 dark:shadow-none group" >
-                            <span class="absolute bottom-0 left-0 w-full h-1 transition-all duration-150 ease-in-out bg-indigo-600 group-hover:h-full"></span>
-                                <span class="absolute right-0 pr-4 duration-200 ease-out group-hover:translate-x-12" >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="w-5 h-5 text-green-400" >
-                                    <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
-                                </svg>
-                                </span>
-                                <span class="absolute left-0 pl-2.5 -translate-x-12 group-hover:translate-x-0 ease-out duration-200" >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="w-5 h-5 text-green-400" >
-                                    <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
-                                </svg>
-                                </span>
-                                <span class="relative w-full text-left transition-colors duration-200 ease-in-out group-hover:text-white dark:group-hover:text-gray-200">Generate</span>
-                            </div>
+    <div class="flex-grow container mx-auto mt-10 px-4 mb-20 max-w-6xl">
+        <h1 class="text-4xl font-bold mb-8 text-center text-indigo-900 border-b pb-4">AI Blog Agent</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+            <!-- Left Column: Inputs & Params -->
+            <div class="md:col-span-5 bg-white p-6 rounded-2xl shadow-xl border border-gray-100 h-fit">
+                <form id="agentForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <h2 class="text-lg font-semibold mb-4 text-indigo-600">1. Select Input Source</h2>
+                    <div class="grid grid-cols-2 gap-2 mb-6">
+                        <label class="cursor-pointer border rounded-xl p-3 text-center hover:bg-indigo-50 border-indigo-200 transition-colors">
+                            <input type="radio" name="input_type" value="text" class="hidden" checked onchange="toggleInputs('text')">
+                            <div class="font-medium">Raw Text Topic</div>
+                        </label>
+                        <label class="cursor-pointer border rounded-xl p-3 text-center hover:bg-red-50 border-red-200 transition-colors">
+                            <input type="radio" name="input_type" value="yt" class="hidden" onchange="toggleInputs('yt')">
+                            <div class="font-medium">YouTube URL</div>
+                        </label>
+                        <label class="cursor-pointer border rounded-xl p-3 text-center hover:bg-green-50 border-green-200 transition-colors">
+                            <input type="radio" name="input_type" value="audio" class="hidden" onchange="toggleInputs('audio')">
+                            <div class="font-medium">Audio / Voice</div>
+                        </label>
+                        <label class="cursor-pointer border rounded-xl p-3 text-center hover:bg-yellow-50 border-yellow-200 transition-colors">
+                            <input type="radio" name="input_type" value="rag" class="hidden" onchange="toggleInputs('rag')">
+                            <div class="font-medium">PDF Document (RAG)</div>
+                        </label>
                     </div>
-                </div>
-                <div class="topic_error text-red-500 text-sm hidden">Please enter a topic in the field.</div>
-            </div>
-            <div class="yt_div">
-                <div class="flex space-x-4 justify-center items-center">
-                    <input id="yt_link" type="url" placeholder="https://www.youtube.com/watch?v=CqLGomPqiT8" class="flex-grow p-2 
-                    border border-blue-400 rounded-lg min-h-[3rem] 
-                    focus:border-blue-600 focus:outline-none active:border-indigo-500">
-                    <div id="generateYtBlogButton" class="h-16 flex items-center justify-center cursor-pointer">
-                        <div class="relative inline-flex items-center justify-start py-3 pl-4 pr-12 overflow-hidden font-semibold shadow text-indigo-600 transition-all duration-150 ease-in-out rounded hover:pl-10 hover:pr-6 bg-gray-50 dark:bg-gray-700 dark:text-white dark:hover:text-gray-200 dark:shadow-none group" >
-                            <span class="absolute bottom-0 left-0 w-full h-1 transition-all duration-150 ease-in-out bg-indigo-600 group-hover:h-full"></span>
-                                <span class="absolute right-0 pr-4 duration-200 ease-out group-hover:translate-x-12" >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="w-5 h-5 text-green-400" >
-                                    <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
-                                </svg>
-                                </span>
-                                <span class="absolute left-0 pl-2.5 -translate-x-12 group-hover:translate-x-0 ease-out duration-200" >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="w-5 h-5 text-green-400" >
-                                    <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
-                                </svg>
-                                </span>
-                                <span class="relative w-full text-left transition-colors duration-200 ease-in-out group-hover:text-white dark:group-hover:text-gray-200">Generate</span>
-                            </div>
+
+                    <div id="input_text" class="mb-6 input-section">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Topic / Subject</label>
+                        <textarea id="topic" name="topic" rows="2" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="e.g. The future of AI in Healthcare"></textarea>
                     </div>
-                </div>
-                <div class="yt_error text-red-500 text-sm hidden">Please enter link in the field.</div>
-            </div>
-            <div class="typewriter load" style="display: none;" id="loading-circle">
-                <div class="slide"><i></i></div>
-                <div class="paper"></div>
-                <div class="keyboard"></div>
-            </div>
-            <section class="mt-10 flex-grow generated_blog_block mb-5" style="display: none;">
-                <h2 class="text-xl mb-4 font-semibold">Generated Blog Article</h2>
-                <div id="blogContent" class="mt-2 text-gray-700 space-y-4 p-2 border-2 border-gray-300 rounded-lg">   
-                </div>
-                <form class="my-2 flex justify-between">
-                    <input type="hidden" name="blogID" id="blogID">
-                    <div class="w-1/3">
-                        <button type="button" class="blog_cancel_btn bg-gray-300 p-2 px-5 rounded-xl">Cancel</button>
+
+                    <div id="input_yt" class="mb-6 input-section" style="display: none;">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">YouTube Video Link</label>
+                        <input id="yt_link" name="yt_link" type="url" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none" placeholder="https://youtube.com/...">
                     </div>
-                    <div class="w-2/3 text-right">
-                        <select id="visibility" name="visibility" class="h-full rounded-md border-0 bg-gray-200 py-2 px-2 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm mr-2">
+
+                    <div id="input_audio" class="mb-6 input-section" style="display: none;">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Upload Audio file (mp3/wav)</label>
+                        <input id="audio_file" name="audio_file" type="file" accept="audio/*" class="w-full p-2 border rounded-lg">
+                    </div>
+
+                    <div id="input_rag" class="mb-6 input-section" style="display: none;">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Upload PDF (Knowledge Base)</label>
+                        <input id="pdf_file" name="pdf_file" type="file" accept=".pdf" class="w-full p-2 border rounded-lg mb-2">
+                        <small class="text-gray-500">The PDF will be ingested into ChromaDB and used as context.</small>
+                    </div>
+
+                    <hr class="my-6">
+                    <h2 class="text-lg font-semibold mb-4 text-indigo-600">2. Prompt Engineering Engine</h2>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Tone</label>
+                            <select name="tone" class="w-full p-2 border rounded-lg bg-gray-50">
+                                <option>Professional</option>
+                                <option>Casual</option>
+                                <option>Storytelling</option>
+                                <option>Humorous</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Audience</label>
+                            <select name="audience" class="w-full p-2 border rounded-lg bg-gray-50">
+                                <option>General</option>
+                                <option>Beginner</option>
+                                <option>Expert</option>
+                                <option>Students</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Target Length</label>
+                            <select name="target_length" class="w-full p-2 border rounded-lg bg-gray-50">
+                                <option>Short (300 words)</option>
+                                <option selected>Medium (600 words)</option>
+                                <option>Long (1200+ words)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Language</label>
+                            <select name="language" class="w-full p-2 border rounded-lg bg-gray-50">
+                                <option>English</option>
+                                <option>Hindi</option>
+                                <option>Spanish</option>
+                                <option>French</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
+                            <input type="checkbox" name="use_search" value="true" class="rounded text-indigo-600">
+                            <span>Use AI Research Assistant (Web Search)</span>
+                        </label>
+                    </div>
+
+                    <button type="button" id="generateAgentBtn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                        🚀 Run AI Agents & Generate
+                    </button>
+                    
+                    <!-- Loading Indicator -->
+                    <div id="loadingIndicator" class="hidden mt-6 text-center space-y-2">
+                        <div class="animate-spin inline-block w-8 h-8 border-[3px] border-current border-t-transparent text-indigo-600 rounded-full" role="status" aria-label="loading"></div>
+                        <p class="text-sm font-medium text-gray-500 animate-pulse">Running Agents (Research → Write → SEO → Proofread)...</p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Column: Results & Scores -->
+            <div class="md:col-span-7">
+                <div id="resultsContainer" class="hidden">
+                    
+                    <!-- Scoring Dashboard -->
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white p-4 rounded-2xl shadow border-l-4 border-green-500 text-center">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold">SEO Score</div>
+                            <div id="scoreSeo" class="text-3xl font-black text-gray-800 mt-1">-</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow border-l-4 border-blue-500 text-center">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Readability</div>
+                            <div id="scoreReadability" class="text-3xl font-black text-gray-800 mt-1">-</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl shadow border-l-4 border-pink-500 text-center">
+                            <div class="text-xs text-gray-500 uppercase tracking-wider font-semibold">Engagement</div>
+                            <div id="scoreEngagement" class="text-3xl font-black text-gray-800 mt-1">-</div>
+                        </div>
+                    </div>
+
+                    <!-- SEO Meta Data -->
+                    <div class="bg-yellow-50 p-5 rounded-2xl mb-6 shadow-sm border border-yellow-200">
+                        <h3 class="text-sm font-bold text-yellow-800 uppercase tracking-wider mb-2">SEO Optimization Data</h3>
+                        <p class="text-sm mb-1"><span class="font-bold">Title:</span> <span id="metaTitle"></span></p>
+                        <p class="text-sm mb-1"><span class="font-bold">Desc:</span> <span id="metaDesc"></span></p>
+                        <p class="text-sm"><span class="font-bold">Keywords:</span> <span id="metaKeywords" class="text-indigo-600"></span></p>
+                    </div>
+
+                    <!-- Refiner Tool -->
+                    <div class="bg-gray-100 p-3 rounded-xl mb-4 flex gap-2 shadow-inner">
+                        <input type="text" id="refineInstruction" placeholder="Make it shorter... / Add examples..." class="flex-grow p-2 rounded-lg border outline-none text-sm focus:border-indigo-400">
+                        <button id="refineBtn" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-900 transition-colors">✨ Improve Draft</button>
+                    </div>
+
+                    <!-- Article Content -->
+                    <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 min-h-[500px] prose max-w-none">
+                        <div id="blogContent" class="text-gray-800 leading-relaxed space-y-4"></div>
+                    </div>
+
+                    <form class="my-6 flex justify-end gap-3">
+                        <input type="hidden" id="current_blog_id">
+                        <select id="visibility" class="rounded-lg border bg-gray-50 py-2 px-3 text-gray-700 text-sm font-medium">
                             <option value="1">Public</option>
                             <option value="0">Private</option>
                         </select>
-                        <button type="submit" class="blog_submit_btn bg-gradient-to-r from-pink-500 to-red-600 text-white p-2 px-5 rounded-xl">Save</button>
-                    </div>
-                </form>
-            </section>
+                        <button type="button" id="publishBtn" class="bg-green-600 text-white py-2 px-6 rounded-lg font-bold hover:bg-green-700 shadow transition-colors">Publish Final Version</button>
+                    </form>
+                </div>
+                
+                <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-400 p-12 border-2 border-dashed border-gray-200 rounded-3xl pb-20">
+                    <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    <p class="text-lg font-medium">Agent Results Will Appear Here</p>
+                    <p class="text-sm mt-2 text-center">Configure the prompts on the left and run the agents to see the magic happen.</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/showdown"></script>
     <script>
+        function toggleInputs(selectedType) {
+            $('.input-section').hide();
+            $('#input_' + selectedType).show();
+            // Highlight selected radio label
+            $('input[name="input_type"]').parent().removeClass('ring-2 ring-offset-2 ring-indigo-500');
+            $('input[name="input_type"]:checked').parent().addClass('ring-2 ring-offset-2 ring-indigo-500');
+        }
+        
+        // Init state
         $(document).ready(function() {
-            $('.yt_div').hide();
-            $('.toggleCheckbox').change(function() {
-                if ($(this).is(':checked')) {
-                    $('.topic_div').hide();
-                    $('.yt_div').show();
+            toggleInputs('text');
+        });
+
+        $('#generateAgentBtn').on('click', async () => {
+            const formData = new FormData($('#agentForm')[0]);
+            const type = $('input[name="input_type"]:checked').val();
+            
+            if (type === 'yt' && !$('#yt_link').val()) { alert("Please enter YT link"); return; }
+            if (type === 'text' && !$('#topic').val()) { alert("Please enter a topic"); return; }
+            if ((type === 'audio' || type === 'rag') && !$('#' + type + '_file').val() && !$('#topic').val()) { 
+                alert("Please upload file or enter topic"); return; 
+            }
+
+            $('#generateAgentBtn').prop('disabled', true).addClass('opacity-50');
+            $('#loadingIndicator').removeClass('hidden');
+            $('#emptyState').addClass('hidden');
+            $('#resultsContainer').addClass('hidden');
+
+            try {
+                let endpointUrl = '/generate_agent';
+                // If it's a YT URL, for simplicity we might just extract the topic or use yt_link directly in the view
+                // Let's send everything to generate_agent
+
+                const response = await fetch(endpointUrl, {
+                    method: 'POST',
+                    body: formData // multipart/form-data
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert("Error: " + data.error);
                 } else {
-                    $('.topic_div').show();
-                    $('.yt_div').hide();
-                }
-            });
-        });
-
-        $("#topic").keyup(function() {
-            $("#topic").removeClass("border-red-500");
-            $("#topic").addClass("border-blue-400");
-            $(".topic_error").addClass('hidden');
-        });
-
-        $("#yt_link").keyup(function() {
-            $("#yt_link").removeClass("border-red-500");
-            $("#yt_link").addClass("border-blue-400");
-            $(".yt_error").addClass('hidden');
-        });
-
-        $('#generateTopicBlogButton').on('click', async () => {
-            $('.generated_blog_block').css('display','none');
-            const topic = $('#topic').val();
-            const blogContent = $('#blogContent');
-            if (topic) {
-                $('#loading-circle').css('display', 'block');
-                blogContent.html('');
-                const endpointUrl = '/topic_view';
-                const csrfToken = '{{ csrf_token }}'
-                try {
-                    const response = await fetch(endpointUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: JSON.stringify({ topic: topic })
-                    });
-                    const data = await response.json();
-                    blogContent.html('');
-                    markdownText = data.content;
+                    // Update UI with details
+                    $('#current_blog_id').val(data.blogpost_id);
+                    
                     const converter = new showdown.Converter();
-                    const htmlContent = converter.makeHtml(markdownText);
-                    blogContent.html(htmlContent);
-                    $('.generated_blog_block').css('display', 'block');
-                    $('#blogID').val(data.blogpost_id)
-                } catch (error) {
-                    console.error("Error occurred:", error);
+                    $('#blogContent').html(converter.makeHtml(data.content));
+                    
+                    $('#metaTitle').text(data.seo_meta.meta_title || '-');
+                    $('#metaDesc').text(data.seo_meta.meta_description || '-');
+                    $('#metaKeywords').text(data.seo_meta.keywords || '-');
+
+                    // Animate Scores
+                    $('#scoreSeo').text(data.scores?.seo || 0);
+                    $('#scoreReadability').text(data.scores?.readability || 0);
+                    $('#scoreEngagement').text(data.scores?.engagement || 0);
+
+                    $('#resultsContainer').removeClass('hidden');
                 }
-                $('#loading-circle').css('display', 'none');
-            } else {
-                $('.topic_error').removeClass('hidden')
-                $("#topic").addClass("border-red-500");
-                $("#error_message").text("Please enter a topic in the field.");
+            } catch (error) {
+                console.error("Fetch/Parse error:", error);
+                // Try to read actual server error
+                alert("An error occurred. Check browser console (F12) for details, or check the Django terminal for the traceback.");
+                $('#emptyState').removeClass('hidden');
             }
+            
+            $('#generateAgentBtn').prop('disabled', false).removeClass('opacity-50');
+            $('#loadingIndicator').addClass('hidden');
         });
 
-        $('#generateYtBlogButton').on('click', async () => {
-            $('.generated_blog_block').css('display','none');
-            const yt_link = $('#yt_link').val();
-            const blogContent = $('#blogContent');
-            if (yt_link) {
-                $('#loading-circle').css('display', 'block');
-                blogContent.html('');
-                const endpointUrl = '/yt_view';
-                const csrfToken = '{{ csrf_token }}'
-                try {
-                    const response = await fetch(endpointUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        },
-                        body: JSON.stringify({ yt_link: yt_link })
-                    });
-                    const data = await response.json();
-                    console.log(data)
-                    blogContent.html('');
-                    markdownText = data.content;
+        // Refine Functionality
+        $('#refineBtn').on('click', async () => {
+            const instr = $('#refineInstruction').val();
+            const id = $('#current_blog_id').val();
+            if (!instr || !id) return;
+
+            $('#refineBtn').text('...').prop('disabled', true);
+            try {
+                const response = await fetch('/regenerate_blog', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ blog_id: id, instruction: instr })
+                });
+                const data = await response.json();
+                if(data.status === 'success') {
                     const converter = new showdown.Converter();
-                    const htmlContent = converter.makeHtml(markdownText);
-                    blogContent.html(htmlContent);
-                    $('.generated_blog_block').css('display', 'block');
-                    $('#blogID').val(data.blogpost_id);
-                } catch (error) {
-                    console.error("Error occurred:", error);
+                    $('#blogContent').html(converter.makeHtml(data.content));
+                    $('#refineInstruction').val('');
                 }
-                $('#loading-circle').css('display', 'none');
-            } else {
-                $('.yt_error').removeClass('hidden')
-                $("#yt_link").addClass("border-red-500");
-                $("#error_message").text("Please enter a topic in the field.");
-            }
+            } catch(e) { console.error(e); }
+            $('#refineBtn').text('✨ Improve Draft').prop('disabled', false);
         });
 
-        $('.blog_submit_btn').on('click', async (e) => {
-            e.preventDefault();
-            let blogID = $('#blogID').val();
-            let action = 'submit';
+        $('#publishBtn').on('click', async () => {
+            let blogID = $('#current_blog_id').val();
             let visibility = $('#visibility').val();
-            const endpointUrl = '/blog_submit';
-            const csrfToken = '{{ csrf_token }}'
-            const response = await fetch(endpointUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({ blogID:blogID, action:action, visibility: visibility })
-            });
-            const data = await response.json();
-            if (data.content == 'success'){
-                window.location.href = '/blogs'
-            }else{
-                alert(data.error)
-            }
+            try {
+                const response = await fetch('/blog_submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ blogID: blogID, action: 'submit', visibility: visibility })
+                });
+                const data = await response.json();
+                if (data.content === 'success') {
+                    window.location.href = '/blogs';
+                }
+            } catch(e) { console.error(e); }
         });
-
-        $('.blog_cancel_btn').on('click', async (e) => {
-            e.preventDefault();
-            let blogID = $('#blogID').val();
-            let action = 'cancel';
-            let visibility = $('#visibility').val();
-            const endpointUrl = '/blog_submit';
-            const csrfToken = '{{ csrf_token }}'
-            const response = await fetch(endpointUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({ blogID:blogID, action:action, visibility: visibility })
-            });
-            const data = await response.json();
-            if (data.content == 'success'){
-                window.location.href = '/generate'
-            }else{
-                alert(data.error)
-            }
-        });
-
     </script>
 </body>
 </html>

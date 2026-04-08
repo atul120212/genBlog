@@ -14,6 +14,14 @@ from django.core.files.base import ContentFile
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
+from .agents import (
+    BlogGenerationWorkflow, QuotaExceededError, InvalidApiKeyError,
+    regenerate_content, download_yt_audio, transcribe_with_assemblyai
+)
+from .scoring import calculate_seo_score, calculate_readability_score, calculate_engagement_score
+from .rag_service import process_pdf_and_store
+from django.core.files.storage import default_storage
+import uuid
 
 def index(request):
     if request.user.is_authenticated:
@@ -82,17 +90,16 @@ def topic_view(request):
         data = json.loads(request.body)
         topic = data.get('topic', None)
         if topic:
-            genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-            model = genai.GenerativeModel('gemini-pro')
             try:
-                response = model.generate_content(f"Write an attractive blog on the topic: {topic}.")
+                from .agents import groq_generate
+                content = groq_generate(f"Write an attractive, well-structured blog post on the topic: {topic}. Use proper H2/H3 headings and write in Markdown.", max_tokens=1000)
                 user = CustomUser.objects.get(username=request.user)
                 blogPost = BlogPost.objects.create(
                     title=f"{topic}",
-                    content=response.text,
+                    content=content,
                     author=user
                 )
-                return HttpResponse(json.dumps({'content': response.text,'blogpost_id':blogPost.id}), content_type="application/json")
+                return HttpResponse(json.dumps({'content': content, 'blogpost_id': blogPost.id}), content_type="application/json")
             except Exception as e:
                 print(e)
                 return HttpResponse(json.dumps({'error': str(e)}), status=500, content_type="application/json")
@@ -100,6 +107,7 @@ def topic_view(request):
             return HttpResponse(json.dumps({'error': 'Topic is missing'}), status=400, content_type="application/json")
     else:
         return HttpResponse(json.dumps({'error': 'Method not allowed'}), status=405, content_type="application/json")
+
 
 def blog_submit(request):
     if request.method == 'POST':
@@ -183,41 +191,255 @@ def get_youtube_video_id(url):
     return None
 
 def yt_view(request):
+    """Legacy YouTube endpoint — now routes through the optimised single-call workflow."""
     if request.method == 'POST':
         data = json.loads(request.body)
         yt_link = data.get('yt_link', None)
-        if yt_link:
-            video_id = get_youtube_video_id(yt_link)
+        if not yt_link:
+            return HttpResponse(json.dumps({'error': 'YouTube link is missing'}), status=400, content_type="application/json")
+
+        video_id = get_youtube_video_id(yt_link)
+        if not video_id:
+            return HttpResponse(json.dumps({'error': 'Invalid YouTube URL'}), status=400, content_type="application/json")
+
+        # Fetch transcript (no API call)
+        try:
+            ytt_api = YouTubeTranscriptApi()
+            fetched = ytt_api.fetch(video_id)
+            transcript_text = " ".join([snippet.text for snippet in fetched])
+        except Exception as e:
+            return HttpResponse(json.dumps({'error': f'Could not fetch transcript: {str(e)}'}), status=500, content_type="application/json")
+
+        try:
             title = YouTube(yt_link).title
-            print(title)
-            if video_id:
-                try:
-                    extraction = YouTubeTranscriptApi.get_transcript(video_id, languages=['en','en-IN','hi'])
-                    final_text = ""
-                    for item in extraction:
-                        final_text += item['text']
-                    try:
-                        genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-                        model = genai.GenerativeModel('gemini-pro')
-                        response = model.generate_content(f"Based on the following transcript from a YouTube video,write a comprehensive blog article, write it based on the transcript, but dont make it look like a youtube video, make it look like a proper blog article:{final_text}")
-                        response_data = response.candidates[0].content.parts[0].text
-                        user = CustomUser.objects.get(username=request.user.username)
-                        blogPost = BlogPost.objects.create(
-                            title=title,
-                            content=response_data,
-                            author=user
-                        )
-                        return HttpResponse(json.dumps({'content': response_data, 'blogpost_id': blogPost.id}), content_type="application/json")
-                    except Exception as e:
-                        print(e)
-                        return HttpResponse(json.dumps({'error': str(e)}), status=500, content_type="application/json")
-                except Exception as e:
-                    print(e)
-                    return HttpResponse(json.dumps({'error': str(e)}), status=500, content_type="application/json")
-            else:
-                return HttpResponse(json.dumps({'error': "Error in YouTube link"}), status=400, content_type="application/json")
+        except Exception:
+            title = f"Blog from YouTube video"
+
+        try:
+            workflow = BlogGenerationWorkflow()
+            result = workflow.run(transcript_text, {'tone': 'Informative', 'audience': 'General', 'target_length': 'Medium', 'language': 'English'})
+            final_content = result['content']
+            user = CustomUser.objects.get(username=request.user.username)
+            blogPost = BlogPost.objects.create(title=title, content=final_content, author=user)
+            return HttpResponse(json.dumps({'content': final_content, 'blogpost_id': blogPost.id}), content_type="application/json")
+        except QuotaExceededError as e:
+            return HttpResponse(json.dumps({'error': str(e), 'quota_exceeded': True}), status=429, content_type="application/json")
+        except Exception as e:
+            print(e)
+            return HttpResponse(json.dumps({'error': str(e)}), status=500, content_type="application/json")
     else:
-        return HttpResponse(json.dumps({'error': 'Method not allowed'}), status=400, content_type="application/json")
+        return HttpResponse(json.dumps({'error': 'Method not allowed'}), status=405, content_type="application/json")
+
+@csrf_exempt
+def generate_agent(request):
+    if request.method == 'POST':
+        try:
+            # Parse parameters from multipart/form-data
+            topic = request.POST.get('topic', '')
+            tone = request.POST.get('tone', 'Informative')
+            audience = request.POST.get('audience', 'General')
+            target_length = request.POST.get('target_length', 'Medium')
+            language = request.POST.get('language', 'English')
+            use_search = request.POST.get('use_search', 'false') == 'true'
+            input_type = request.POST.get('input_type', 'text') # text, yt, audio, rag
+            yt_link = request.POST.get('yt_link', '')
+
+            pdf_file = request.FILES.get('pdf_file')
+            audio_file = request.FILES.get('audio_file')
+            
+            user = CustomUser.objects.get(username=request.user.username)
+            use_rag = False
+
+            # ----------------------------------------------------------------
+            # Handle YouTube URL
+            # Flow: yt-dlp (download audio) → AssemblyAI (transcribe) → Gemini (blog)
+            # ----------------------------------------------------------------
+            if input_type == 'yt' and yt_link:
+                video_id = get_youtube_video_id(yt_link)
+                if not video_id:
+                    return HttpResponse(json.dumps({'error': 'Invalid YouTube URL'}), status=400, content_type="application/json")
+
+                # Step 1: Download audio with yt-dlp
+                try:
+                    print(f"[YT] Downloading audio for video_id={video_id}...")
+                    audio_path = download_yt_audio(yt_link, video_id)
+                    print(f"[YT] Audio downloaded: {audio_path}")
+                except Exception as dl_err:
+                    return HttpResponse(
+                        json.dumps({'error': f"Audio download failed: {str(dl_err)}"}),
+                        status=500, content_type="application/json"
+                    )
+
+                # Step 2: Transcribe with AssemblyAI
+                try:
+                    transcript_text = transcribe_with_assemblyai(audio_path)
+                except ValueError as ve:
+                    return HttpResponse(
+                        json.dumps({'error': str(ve)}),
+                        status=500, content_type="application/json"
+                    )
+                except Exception as aai_err:
+                    return HttpResponse(
+                        json.dumps({'error': f"Transcription failed: {str(aai_err)}"}),
+                        status=500, content_type="application/json"
+                    )
+
+                # Cap transcript length before passing to Gemini
+                topic = transcript_text[:6000]
+
+
+            # Handle RAG / PDF Document
+            if input_type == 'rag' and pdf_file:
+                from .models import Document
+                filename = default_storage.save(f"documents/{pdf_file.name}", ContentFile(pdf_file.read()))
+                file_path = default_storage.path(filename)
+                
+                doc = Document.objects.create(title=topic or pdf_file.name, file=filename, user=user)
+                process_pdf_and_store(file_path, doc.id, user.id)
+                use_rag = True
+                if not topic: topic = f"Summary of {pdf_file.name}"
+                
+            # Handle Audio — transcription + blog are combined into one workflow call below.
+            # We upload the file and obtain the transcript here (uses Files API, not counted
+            # as a generative call on the free tier).
+            if input_type == 'audio' and audio_file:
+                try:
+                    genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+                    filename = default_storage.save(f"media/{audio_file.name}", ContentFile(audio_file.read()))
+                    file_path = default_storage.path(filename)
+                    audio_upload = genai.upload_file(path=file_path)
+                    # Quick transcription — kept as a brief prompt to minimise token usage.
+                    model = genai.GenerativeModel('gemini-2.0-flash')
+                    trans_response = model.generate_content(
+                        [audio_upload, "Transcribe this audio. Return ONLY the transcript text, no commentary."]
+                    )
+                    topic = trans_response.text.strip()[:6000]  # cap before blog generation
+                except QuotaExceededError as e:
+                    return HttpResponse(json.dumps({'error': str(e), 'quota_exceeded': True}), status=429, content_type="application/json")
+                except Exception as e:
+                    return HttpResponse(json.dumps({'error': f"Audio processing failed: {str(e)}"}), status=500, content_type="application/json")
+                    
+            if not topic:
+                return HttpResponse(json.dumps({'error': 'Topic or input is missing'}), status=400, content_type="application/json")
+
+            # Run Workflow
+            params = {
+                'tone': tone,
+                'audience': audience,
+                'target_length': target_length,
+                'language': language,
+                'use_search': use_search,
+                'use_rag': use_rag
+            }
+            
+            workflow = BlogGenerationWorkflow()
+            result = workflow.run(topic, params)
+            
+            final_content = result['content']
+            seo_data = result['seo_data']
+            
+            # Compute scores
+            seo_score = calculate_seo_score(final_content, seo_data.get('meta_title'), seo_data.get('meta_description'), seo_data.get('keywords'))
+            readability_score = calculate_readability_score(final_content)
+            engagement_score = calculate_engagement_score(final_content)
+            
+            blogPost = BlogPost.objects.create(
+                title=seo_data.get('meta_title', topic[:50]),
+                content=final_content,
+                author=user,
+                tone=tone,
+                audience=audience,
+                target_length=target_length,
+                language=language,
+                meta_title=seo_data.get('meta_title'),
+                meta_description=seo_data.get('meta_description'),
+                keywords=seo_data.get('keywords'),
+                seo_score=seo_score,
+                readability_score=readability_score,
+                engagement_score=engagement_score
+            )
+
+            # Save generated thumbnail image (if available)
+            image_bytes = result.get('image_bytes')
+            if image_bytes:
+                try:
+                    img_filename = f"thumbnails/blog_{blogPost.id}.png"
+                    blogPost.thumbnail.save(img_filename, ContentFile(image_bytes), save=True)
+                    print(f"[Image] Thumbnail saved: {img_filename}")
+                except Exception as img_save_err:
+                    print(f"[Image] Could not save thumbnail: {img_save_err}")
+
+            # Initial Version
+            from .models import BlogVersion
+            BlogVersion.objects.create(
+                post=blogPost,
+                version_number=1,
+                content=final_content
+            )
+
+            res_data = {
+                'content': final_content, 
+                'blogpost_id': blogPost.id,
+                'seo_meta': seo_data,
+                'scores': {
+                    'seo': seo_score,
+                    'readability': readability_score,
+                    'engagement': engagement_score
+                }
+            }
+            return HttpResponse(json.dumps(res_data), content_type="application/json")
+        except InvalidApiKeyError as e:
+            print(f"[APIKey] {e}")
+            return HttpResponse(
+                json.dumps({'error': str(e), 'invalid_api_key': True}),
+                status=401, content_type="application/json"
+            )
+        except QuotaExceededError as e:
+            print(f"[Quota] {e}")
+            return HttpResponse(
+                json.dumps({'error': str(e), 'quota_exceeded': True}),
+                status=429, content_type="application/json"
+            )
+        except Exception as e:
+            print(e)
+            return HttpResponse(json.dumps({'error': str(e)}), status=500, content_type="application/json")
+    else:
+        return HttpResponse(json.dumps({'error': 'Method not allowed'}), status=405, content_type="application/json")
+
+@csrf_exempt
+def regenerate_blog(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        blog_id = data.get('blog_id')
+        instruction = data.get('instruction')
+        
+        if blog_id and instruction:
+            try:
+                blog = BlogPost.objects.get(id=blog_id, author=request.user)
+
+                # Uses the shared regenerate_content helper — single API call, content capped.
+                new_content = regenerate_content(blog.content, instruction)
+
+                blog.content = new_content
+                blog.save()
+
+                # Save version
+                from .models import BlogVersion
+                latest_version = blog.versions.count()
+                BlogVersion.objects.create(
+                    post=blog,
+                    version_number=latest_version + 1,
+                    content=new_content
+                )
+
+                return HttpResponse(json.dumps({'status': 'success', 'content': new_content}), content_type="application/json")
+            except QuotaExceededError as e:
+                return HttpResponse(json.dumps({'error': str(e), 'quota_exceeded': True}), status=429, content_type="application/json")
+            except Exception as e:
+                return HttpResponse(json.dumps({'error': str(e)}), status=500, content_type="application/json")
+        else:
+            return HttpResponse(json.dumps({'error': 'Missing parameters'}), status=400, content_type="application/json")
+    return HttpResponse(json.dumps({'error': 'Method not allowed'}), status=405, content_type="application/json")
     
 def delete_blog(request,id):
     try:

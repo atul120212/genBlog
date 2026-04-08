@@ -21,6 +21,22 @@ class BlogPost(models.Model):
     is_published = models.BooleanField(default=False)
     thumbnail = models.ImageField(upload_to='thumbnails/', blank=True, null=True)
     likes = models.PositiveIntegerField(default=0)
+    
+    # Phase 1: New Blog parameters
+    tone = models.CharField(max_length=50, blank=True, null=True)
+    audience = models.CharField(max_length=50, blank=True, null=True)
+    target_length = models.CharField(max_length=50, blank=True, null=True)
+    language = models.CharField(max_length=50, default='English')
+    
+    # Phase 1: SEO fields
+    meta_title = models.CharField(max_length=255, blank=True, null=True)
+    meta_description = models.TextField(blank=True, null=True)
+    keywords = models.TextField(blank=True, null=True)
+
+    # Phase 2: Content Scoring
+    seo_score = models.IntegerField(default=0)
+    readability_score = models.IntegerField(default=0)
+    engagement_score = models.IntegerField(default=0)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -48,3 +64,24 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.email}"
+
+class BlogVersion(models.Model):
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='versions')
+    version_number = models.PositiveIntegerField()
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.post.title} - v{self.version_number}"
+
+    class Meta:
+        ordering = ['-version_number']
+
+class Document(models.Model):
+    title = models.CharField(max_length=255)
+    file = models.FileField(upload_to='documents/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return self.title
